@@ -1,31 +1,53 @@
 package org.account;
 
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+
 import static io.restassured.RestAssured.given;
-import static org.apache.http.HttpStatus.SC_CREATED;
+
 import static org.apache.http.HttpStatus.SC_OK;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
+
 
 public class AccountTestApi {
     RequestSpecification request;
+    Response responseAuthorization;
+
+    private final String URI = "http://31.131.249.140";
+    private final int PORT = 8080;
+    private final String PATH = "/api/";
+    private String token;
+
 
     @BeforeEach
     public void init() {
+        responseAuthorization = given()
+                .baseUri(URI)
+                .port(PORT)
+                .basePath(PATH)
+                .contentType(ContentType.JSON)
+                .when()
+                .body("{\n" +
+                        "  \"password\": \"kMBc3Lb7iM3sd0Mt\",\n" +
+                        "  \"rememberMe\": true,\n" +
+                        "  \"username\": \"user\"\n" +
+                        "}")
+                .post("/authenticate");
+
+        token = responseAuthorization.jsonPath().get("id_token");
+
         request =
                 given()
                         .baseUri("http://31.131.249.140")
                         .port(8080)
                         .basePath("/api")
-                        .header("Authorization", "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbiIsImF1dGgiOiJST0xFX0FETUlOLFJPTEVfVVNFUiIsImV4cCI6MTYzNTM1MDkxNH0.wR-tT7e2iZWm2R892VFzt--micaRk8XPeh9Sdx55GGvletZTICnJHVw19mex_IgUDgM5ysjDzIkHyA1k3OYN9w")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(ContentType.JSON);
     }
-
 
     @Test
     @DisplayName("Проверка сценария GET account-resource")
@@ -33,8 +55,7 @@ public class AccountTestApi {
         request.when()
                 .get("/account")
                 .then()
-                .statusCode(SC_OK)
-                .body("size()", is(13), "id", is(1));
+                .statusCode(SC_OK);
     }
 }
 
